@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useUser } from "../../hooks/useUser";
 import Link from "next/link";
 import { Package, Plus, Trash2, DollarSign, TrendingUp, BarChart3, X } from "lucide-react";
 import { Glass, money } from "../../components/ui";
@@ -17,7 +17,7 @@ const CATEGORIES = [
 ];
 
 export default function SellerPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: userLoading } = useUser();
   const toast = useToast();
 
   const [products, setProducts] = useState([]);
@@ -37,14 +37,14 @@ export default function SellerPage() {
   }
 
   useEffect(() => {
-    if (session?.user) load();
-  }, [session?.user]);
+    if (user) load();
+  }, [user]);
 
   async function applyToSell() {
     await fetch("/api/seller/apply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sellerName: session.user.name }),
+      body: JSON.stringify({ sellerName: user.name }),
     });
     toast("Solicitação enviada! Aguarde a aprovação do administrador.", "success");
     window.location.reload();
@@ -99,9 +99,9 @@ export default function SellerPage() {
     setWithdrawForm({ amount: "", pixKey: "" });
   }
 
-  if (status === "loading") return null;
+  if (userLoading) return null;
 
-  if (!session?.user) {
+  if (!user) {
     return (
       <div className="max-w-lg mx-auto px-4 py-24 text-center">
         <Package className="w-10 h-10 text-cyan-300 mx-auto mb-4" />
@@ -112,7 +112,7 @@ export default function SellerPage() {
     );
   }
 
-  if (!["SELLER", "ADMIN"].includes(session.user.role)) {
+  if (!["SELLER", "ADMIN"].includes(user.role)) {
     return (
       <div className="max-w-lg mx-auto px-4 py-24 text-center">
         <Package className="w-10 h-10 text-cyan-300 mx-auto mb-4" />
@@ -123,7 +123,7 @@ export default function SellerPage() {
     );
   }
 
-  if (session.user.sellerStatus === "PENDING") {
+  if (user.sellerStatus === "PENDING") {
     return (
       <div className="max-w-lg mx-auto px-4 py-24 text-center">
         <Package className="w-10 h-10 text-amber-300 mx-auto mb-4" />
@@ -142,7 +142,7 @@ export default function SellerPage() {
         <div>
           <h1 className="font-display text-xl flex items-center gap-2"><Package className="w-5 h-5 text-cyan-300" /> Painel do vendedor</h1>
           <p className="text-white/40 text-sm mt-1">
-            {session.user.sellerStatus === "VERIFIED" ? "Vendedor verificado ✓" : "Verificação pendente"}
+            {user.sellerStatus === "VERIFIED" ? "Vendedor verificado ✓" : "Verificação pendente"}
           </p>
         </div>
         <button onClick={() => setShowAdd(true)} className="px-5 py-2.5 rounded-full text-sm font-semibold bg-gradient-to-r from-[#3D5CFF] to-[#9333EA] flex items-center gap-2">

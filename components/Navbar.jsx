@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useUser } from "../hooks/useUser";
+import { createClient } from "../lib/supabase/client";
 import {
   Search, ShoppingCart, Menu, X, ChevronRight, Zap, Bell, LogOut, User as UserIcon,
 } from "lucide-react";
@@ -20,7 +21,7 @@ const GAMES = [
 ];
 
 export default function Navbar() {
-  const { data: session } = useSession();
+  const { user } = useUser();
   const { count } = useCart();
   const router = useRouter();
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -28,7 +29,7 @@ export default function Navbar() {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!user) return;
     let active = true;
     async function poll() {
       try {
@@ -46,7 +47,7 @@ export default function Navbar() {
       active = false;
       clearInterval(id);
     };
-  }, [session?.user]);
+  }, [user]);
 
   function submitSearch(e) {
     e.preventDefault();
@@ -114,7 +115,7 @@ export default function Navbar() {
         </form>
 
         <div className="ml-auto flex items-center gap-2">
-          {session?.user && (
+          {user && (
             <Link href="/profile?tab=notificacoes" className="relative p-2.5 rounded-full hover:bg-white/10 transition">
               <Bell className="w-5 h-5" />
               {unread > 0 && (
@@ -134,30 +135,30 @@ export default function Navbar() {
             )}
           </Link>
 
-          {session?.user ? (
+          {user ? (
             <div className="relative group">
               <Link href="/profile" className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-white/10 hover:border-cyan-400/40 transition">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-400 to-[#3D5CFF] flex items-center justify-center text-xs font-bold">
-                  {session.user.name?.[0]?.toUpperCase()}
+                  {user.name?.[0]?.toUpperCase()}
                 </div>
-                <span className="hidden sm:block text-sm">{session.user.name}</span>
+                <span className="hidden sm:block text-sm">{user.name}</span>
               </Link>
               <div className="absolute top-full right-0 pt-3 hidden group-hover:block">
                 <Glass className="rounded-xl p-2 w-44 shadow-2xl shadow-black/50">
                   <Link href="/profile" className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 flex items-center gap-2 text-sm">
                     <UserIcon className="w-4 h-4" /> Meu perfil
                   </Link>
-                  {["SELLER", "ADMIN"].includes(session.user.role) && (
+                  {["SELLER", "ADMIN"].includes(user.role) && (
                     <Link href="/seller" className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 flex items-center gap-2 text-sm">
                       Painel do vendedor
                     </Link>
                   )}
-                  {session.user.role === "ADMIN" && (
+                  {user.role === "ADMIN" && (
                     <Link href="/admin" className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 flex items-center gap-2 text-sm">
                       Administração
                     </Link>
                   )}
-                  <button onClick={() => signOut({ callbackUrl: "/" })} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 flex items-center gap-2 text-sm text-red-300">
+                  <button onClick={async () => { await createClient().auth.signOut(); router.push("/"); router.refresh(); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 flex items-center gap-2 text-sm text-red-300">
                     <LogOut className="w-4 h-4" /> Sair
                   </button>
                 </Glass>

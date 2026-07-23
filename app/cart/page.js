@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useUser } from "../../hooks/useUser";
 import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
 import { Glass, ProductCover, money } from "../../components/ui";
 import { useCart } from "../../components/CartContext";
 
 export default function CartPage() {
   const { cart, updateQty, removeFromCart, total } = useCart();
-  const { data: session } = useSession();
+  const { user } = useUser();
   const router = useRouter();
 
   function goCheckout() {
-    if (!session?.user) {
+    if (!user) {
       router.push("/login");
       return;
     }

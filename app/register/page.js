@@ -1,55 +1,69 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Glass } from "../../components/ui";
+import { createClient } from "../../lib/supabase/client";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
     const form = new FormData(e.target);
-    const payload = {
-      name: form.get("name"),
-      email: form.get("email"),
-      password: form.get("password"),
-    };
+    const name = form.get("name");
+    const email = form.get("email");
+    const password = form.get("password");
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.error || "Não foi possível criar sua conta.");
-      setLoading(false);
-      return;
-    }
-
-    const signInRes = await signIn("credentials", {
-      email: payload.email,
-      password: payload.password,
-      redirect: false,
+    const supabase = createClient();
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name }, // lido pelo trigger no banco para criar o perfil (public."User")
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
 
     setLoading(false);
-    if (signInRes?.error) {
-      router.push("/login");
+    if (signUpError) {
+      setError(
+        signUpError.message.includes("already registered")
+          ? "Já existe uma conta com este e-mail."
+          : signUpError.message
+      );
       return;
     }
+
+    // Se a confirmação de e-mail estiver ativada no projeto Supabase, não há
+    // sessão ainda — pedimos para o usuário confirmar o e-mail antes de entrar.
+    if (!data.session) {
+      setConfirmationSent(true);
+      return;
+    }
+
     router.push("/");
     router.refresh();
+  }
+
+  if (confirmationSent) {
+    return (
+      <div className="max-w-sm mx-auto px-4 py-16">
+        <Glass className="rounded-3xl p-6 text-center">
+          <h1 className="font-display text-lg mb-3">Confirme seu e-mail</h1>
+          <p className="text-sm text-white/60">Enviamos um link de confirmação para o seu e-mail. Clique nele para ativar sua conta e depois faça login.</p>
+          <Link href="/login" className="inline-block mt-5 text-cyan-300 text-sm font-semibold">Ir para o login</Link>
+        </Glass>
+      </div>
+    );
   }
 
   return (
@@ -66,7 +80,7 @@ export default function RegisterPage() {
               {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          <button disabled={loading} type="submit" className="w-full py-3 rounded-full font-semibold bg-gradient-to-r from-[#3D5CFF] to-[#9333EA] mt-2 disabled:opacity-50">
+          <button disabled={loading} type="submit" className="w-full py-3 rounded-full font-semibold bg-gradient-to-r from-[#3D5CFF] to-[#9333EA] disabled:opacity-50">
             {loading ? "Criando conta..." : "Cadastrar"}
           </button>
         </form>

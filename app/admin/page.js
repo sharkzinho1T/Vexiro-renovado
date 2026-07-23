@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useUser } from "../../hooks/useUser";
 import Link from "next/link";
 import { Users, ShieldCheck, Package, BarChart3, AlertTriangle, Settings, DollarSign, BadgeCheck } from "lucide-react";
 import { Glass, money } from "../../components/ui";
 import { useToast } from "../../components/Toast";
 
 export default function AdminPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: userLoading } = useUser();
   const toast = useToast();
   const [tab, setTab] = useState("dashboard");
 
@@ -35,8 +35,8 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (session?.user?.role === "ADMIN") loadAll();
-  }, [session?.user]);
+    if (user?.role === "ADMIN") loadAll();
+  }, [user]);
 
   async function toggleSuspend(u) {
     await fetch(`/api/admin/users/${u.id}`, {
@@ -83,9 +83,9 @@ export default function AdminPage() {
     loadAll();
   }
 
-  if (status === "loading") return null;
+  if (userLoading) return null;
 
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!user || user.role !== "ADMIN") {
     return (
       <div className="max-w-lg mx-auto px-4 py-24 text-center">
         <Settings className="w-10 h-10 text-cyan-300 mx-auto mb-4" />

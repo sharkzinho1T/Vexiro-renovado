@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useUser } from "../hooks/useUser";
 import { Heart, BadgeCheck } from "lucide-react";
 import { Glass, ProductCover, StarRow, money } from "./ui";
 import { useCart } from "./CartContext";
@@ -9,7 +9,7 @@ import { useToast } from "./Toast";
 
 export default function ProductCard({ product, isFavorite = false, onToggleFavorite }) {
   const { addToCart } = useCart();
-  const { data: session } = useSession();
+  const { user } = useUser();
   const toast = useToast();
 
   function handleAdd(e) {
@@ -22,7 +22,7 @@ export default function ProductCard({ product, isFavorite = false, onToggleFavor
   function handleFav(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (!session?.user) {
+    if (!user) {
       toast("Entre na sua conta para favoritar produtos", "info");
       return;
     }

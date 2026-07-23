@@ -2,13 +2,14 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useUser } from "../../hooks/useUser";
+import { createClient } from "../../lib/supabase/client";
 import Link from "next/link";
 import { ClipboardList, Heart, Wallet, Bell, LogOut, Store } from "lucide-react";
 import { Glass, ProductCover, money } from "../../components/ui";
 
 function ProfileInner() {
-  const { data: session } = useSession();
+  const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState(searchParams.get("tab") || "compras");
@@ -20,12 +21,12 @@ function ProfileInner() {
   const [applying, setApplying] = useState(false);
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!user) return;
     fetch("/api/orders").then((r) => r.json()).then((d) => setOrders(d.orders || []));
     fetch("/api/favorites").then((r) => r.json()).then((d) => setFavorites(d.favorites || []));
     fetch("/api/wallet").then((r) => r.json()).then((d) => setWallet(d));
     fetch("/api/notifications").then((r) => r.json()).then((d) => setNotifications(d.notifications || []));
-  }, [session?.user, tab]);
+  }, [user, tab]);
 
   async function markAllRead() {
     await fetch("/api/notifications", {
@@ -41,14 +42,14 @@ function ProfileInner() {
     await fetch("/api/seller/apply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sellerName: session.user.name }),
+      body: JSON.stringify({ sellerName: user.name }),
     });
     setApplying(false);
     router.push("/seller");
     router.refresh();
   }
 
-  if (!session?.user) {
+  if (!user) {
     return (
       <div className="max-w-sm mx-auto px-4 py-20 text-center">
         <p className="text-white/50 mb-4">Entre na sua conta para ver seu perfil.</p>
@@ -68,14 +69,14 @@ function ProfileInner() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex items-center gap-4 mb-8 flex-wrap">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-[#3D5CFF] flex items-center justify-center font-display text-xl">
-          {session.user.name?.[0]?.toUpperCase()}
+          {user.name?.[0]?.toUpperCase()}
         </div>
         <div>
-          <h1 className="font-display text-xl">{session.user.name}</h1>
-          <p className="text-white/40 text-sm">{session.user.email}</p>
+          <h1 className="font-display text-xl">{user.name}</h1>
+          <p className="text-white/40 text-sm">{user.email}</p>
         </div>
         <div className="ml-auto flex gap-2">
-          {["SELLER", "ADMIN"].includes(session.user.role) ? (
+          {["SELLER", "ADMIN"].includes(user.role) ? (
             <Link href="/seller" className="px-4 py-2 rounded-full text-sm font-semibold border border-white/15 hover:bg-white/5 flex items-center gap-2">
               <Store className="w-4 h-4" /> Painel do vendedor
             </Link>
@@ -84,7 +85,7 @@ function ProfileInner() {
               {applying ? "Enviando..." : "Tornar-se vendedor"}
             </button>
           )}
-          <button onClick={() => signOut({ callbackUrl: "/" })} className="p-2.5 rounded-full border border-white/15 hover:bg-white/5"><LogOut className="w-4 h-4" /></button>
+          <button onClick={async () => { await createClient().auth.signOut(); router.push("/"); router.refresh(); }} className="p-2.5 rounded-full border border-white/15 hover:bg-white/5"><LogOut className="w-4 h-4" /></button>
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useUser } from "../hooks/useUser";
 import { TrendingUp, ChevronRight, Sparkles, Zap, Gamepad2 } from "lucide-react";
 import { Glass, GAME_ICONS, StarRow, money } from "../components/ui";
 import ProductCard from "../components/ProductCard";
@@ -20,7 +20,7 @@ const GAMES = [
 function HomeInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useUser();
   const toast = useToast();
 
   const category = searchParams.get("category") || "all";
@@ -33,13 +33,13 @@ function HomeInner() {
   const [loading, setLoading] = useState(true);
 
   const loadFavorites = useCallback(async () => {
-    if (!session?.user) return;
+    if (!user) return;
     const res = await fetch("/api/favorites");
     if (res.ok) {
       const data = await res.json();
       setFavorites(data.favorites.map((f) => f.productId));
     }
-  }, [session?.user]);
+  }, [user]);
 
   useEffect(() => {
     loadFavorites();

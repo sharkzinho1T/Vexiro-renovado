@@ -1,7 +1,15 @@
 // Vexiro — schema de banco de dados (PostgreSQL / Supabase)
-// Rode `npx prisma migrate dev` após configurar DATABASE_URL e DIRECT_URL no .env
-// (veja instruções no README — Supabase usa uma URL com pooler para consultas
-// e uma URL direta para migrações)
+//
+// Autenticação: Supabase Auth (não NextAuth). O model User abaixo é o
+// "perfil público" de cada usuário e seu `id` é SEMPRE o mesmo UUID do
+// usuário em auth.users — nunca gerado pelo Prisma. A linha é criada
+// automaticamente por um trigger no banco (veja supabase/auth-trigger.sql)
+// no momento do cadastro. Nenhuma senha é armazenada nesta tabela.
+//
+// Rode `npx prisma migrate dev` após configurar DATABASE_URL e DIRECT_URL no
+// .env (veja o README — Supabase usa uma URL com pooler para consultas e uma
+// URL direta para migrações). Depois, rode o script supabase/auth-trigger.sql
+// no SQL Editor do Supabase.
 
 generator client {
   provider = "prisma-client-js"
@@ -65,10 +73,9 @@ enum ReportStatus {
 }
 
 model User {
-  id            String       @id @default(cuid())
+  id            String       @id @db.Uuid // igual ao id em auth.users (Supabase Auth)
   name          String
   email         String       @unique
-  passwordHash  String
   avatarUrl     String?
   bannerUrl     String?
   bio           String?
@@ -76,7 +83,6 @@ model User {
   sellerStatus  SellerStatus @default(NONE)
   sellerName    String?
   vortexPoints  Int          @default(0)
-  emailVerified DateTime?
   suspended     Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -99,7 +105,7 @@ model User {
 
 model Wallet {
   id        String   @id @default(cuid())
-  userId    String   @unique
+  userId    String   @unique @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   balance   Decimal  @default(0) @db.Decimal(10, 2)
   updatedAt DateTime @updatedAt
@@ -142,7 +148,7 @@ model Product {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
-  sellerId String
+  sellerId String @db.Uuid
   seller   User   @relation(fields: [sellerId], references: [id])
 
   sold      Int      @default(0)
@@ -160,7 +166,7 @@ model Product {
 
 model Favorite {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -184,7 +190,7 @@ model Coupon {
 
 model Order {
   id            String        @id @default(cuid())
-  buyerId       String
+  buyerId       String @db.Uuid
   buyer         User          @relation("BuyerOrders", fields: [buyerId], references: [id])
   status        OrderStatus   @default(PENDING_PAYMENT)
   subtotal      Decimal       @db.Decimal(10, 2)
@@ -229,7 +235,7 @@ model Payment {
 
 model Withdrawal {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount    Decimal  @db.Decimal(10, 2)
   pixKey    String
@@ -241,7 +247,7 @@ model Review {
   id        String   @id @default(cuid())
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId    String
+  userId    String @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   rating    Int
   comment   String
@@ -252,7 +258,7 @@ model Review {
 
 model Notification {
   id        String            @id @default(cuid())
-  userId    String
+  userId    String @db.Uuid
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   title     String
@@ -263,9 +269,9 @@ model Notification {
 
 model Conversation {
   id        String   @id @default(cuid())
-  buyerId   String
+  buyerId   String @db.Uuid
   buyer     User     @relation("ConversationBuyer", fields: [buyerId], references: [id])
-  sellerId  String
+  sellerId  String @db.Uuid
   seller    User     @relation("ConversationSeller", fields: [sellerId], references: [id])
   productId String?
   product   Product? @relation(fields: [productId], references: [id])
@@ -280,7 +286,7 @@ model Message {
   id             String       @id @default(cuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String
+  senderId       String @db.Uuid
   sender         User         @relation("SentMessages", fields: [senderId], references: [id])
   content        String
   attachmentUrl  String?
@@ -292,7 +298,7 @@ model Message {
 
 model Report {
   id          String       @id @default(cuid())
-  reporterId  String
+  reporterId  String @db.Uuid
   reporter    User         @relation("ReportsMade", fields: [reporterId], references: [id])
   targetType  String       // "product" | "user" | "message"
   targetId    String
@@ -303,7 +309,7 @@ model Report {
 
 model AuditLog {
   id        String   @id @default(cuid())
-  userId    String?
+  userId    String? @db.Uuid
   user      User?    @relation(fields: [userId], references: [id])
   action    String
   metadata  Json?

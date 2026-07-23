@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useUser } from "../../hooks/useUser";
 import Link from "next/link";
 import { Send, MessageCircle, Flag } from "lucide-react";
 import { Glass } from "../../components/ui";
 import { useToast } from "../../components/Toast";
 
 function ChatInner() {
-  const { data: session } = useSession();
+  const { user } = useUser();
   const searchParams = useSearchParams();
   const toast = useToast();
 
@@ -20,12 +20,12 @@ function ChatInner() {
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!user) return;
     fetch("/api/chat").then((r) => r.json()).then((d) => {
       setConversations(d.conversations || []);
       if (!activeId && d.conversations?.[0]) setActiveId(d.conversations[0].id);
     });
-  }, [session?.user]);
+  }, [user]);
 
   useEffect(() => {
     if (!activeId) return;
@@ -71,7 +71,7 @@ function ChatInner() {
     toast("Denúncia enviada à moderação.", "success");
   }
 
-  if (!session?.user) {
+  if (!user) {
     return (
       <div className="max-w-sm mx-auto px-4 py-20 text-center">
         <MessageCircle className="w-10 h-10 text-cyan-300 mx-auto mb-4" />
@@ -90,7 +90,7 @@ function ChatInner() {
         <Glass className="rounded-2xl overflow-y-auto md:col-span-1">
           {conversations.length === 0 && <p className="p-5 text-white/40 text-sm">Nenhuma conversa ainda. Inicie uma pela página de um produto.</p>}
           {conversations.map((c) => {
-            const other = c.buyerId === session.user.id ? c.seller : c.buyer;
+            const other = c.buyerId === user.id ? c.seller : c.buyer;
             return (
               <button key={c.id} onClick={() => setActiveId(c.id)} className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 transition ${activeId === c.id ? "bg-white/10" : ""}`}>
                 <p className="text-sm font-semibold">{other.name}</p>
@@ -107,13 +107,13 @@ function ChatInner() {
           ) : (
             <>
               <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                <p className="text-sm font-semibold">{active.buyerId === session.user.id ? active.seller.name : active.buyer.name}</p>
+                <p className="text-sm font-semibold">{active.buyerId === user.id ? active.seller.name : active.buyer.name}</p>
                 <button onClick={reportConversation} className="text-white/30 hover:text-red-400"><Flag className="w-4 h-4" /></button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.senderId === session.user.id ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${m.senderId === session.user.id ? "bg-gradient-to-r from-[#3D5CFF] to-[#9333EA]" : "bg-white/10"}`}>
+                  <div key={m.id} className={`flex ${m.senderId === user.id ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${m.senderId === user.id ? "bg-gradient-to-r from-[#3D5CFF] to-[#9333EA]" : "bg-white/10"}`}>
                       {m.content}
                     </div>
                   </div>

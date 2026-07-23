@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Glass } from "../../components/ui";
+import { createClient } from "../../lib/supabase/client";
 
-export default function LoginPage() {
+function LoginInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,19 +19,24 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     const form = new FormData(e.target);
+    const supabase = createClient();
 
-    const res = await signIn("credentials", {
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: form.get("email"),
       password: form.get("password"),
-      redirect: false,
     });
 
     setLoading(false);
-    if (res?.error) {
-      setError("E-mail ou senha incorretos.");
+    if (signInError) {
+      setError(
+        signInError.message === "Invalid login credentials"
+          ? "E-mail ou senha incorretos."
+          : signInError.message
+      );
       return;
     }
-    router.push("/");
+
+    router.push(searchParams.get("next") || "/");
     router.refresh();
   }
 
@@ -47,7 +53,10 @@ export default function LoginPage() {
               {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          <button disabled={loading} type="submit" className="w-full py-3 rounded-full font-semibold bg-gradient-to-r from-[#3D5CFF] to-[#9333EA] mt-2 disabled:opacity-50">
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-xs text-cyan-300">Esqueceu a senha?</Link>
+          </div>
+          <button disabled={loading} type="submit" className="w-full py-3 rounded-full font-semibold bg-gradient-to-r from-[#3D5CFF] to-[#9333EA] disabled:opacity-50">
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
@@ -56,5 +65,13 @@ export default function LoginPage() {
         </p>
       </Glass>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   );
 }

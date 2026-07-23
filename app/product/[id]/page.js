@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useUser } from "../../../hooks/useUser";
 import { Heart, ShoppingCart, MessageCircle, X } from "lucide-react";
 import { Glass, ProductCover, StarRow, VerifiedBadge, money } from "../../../components/ui";
 import { useCart } from "../../../components/CartContext";
@@ -11,7 +11,7 @@ import { useToast } from "../../../components/Toast";
 export default function ProductPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useUser();
   const { addToCart } = useCart();
   const toast = useToast();
 
@@ -27,15 +27,15 @@ export default function ProductPage() {
       .then((data) => setProduct(data.product))
       .finally(() => setLoading(false));
 
-    if (session?.user) {
+    if (user) {
       fetch("/api/favorites")
         .then((r) => r.json())
         .then((data) => setIsFavorite((data.favorites || []).some((f) => f.productId === id)));
     }
-  }, [id, session?.user]);
+  }, [id, user]);
 
   async function toggleFav() {
-    if (!session?.user) {
+    if (!user) {
       toast("Entre na sua conta para favoritar produtos", "info");
       return;
     }
@@ -49,7 +49,7 @@ export default function ProductPage() {
   }
 
   async function startChat() {
-    if (!session?.user) {
+    if (!user) {
       router.push("/login");
       return;
     }
@@ -135,7 +135,7 @@ export default function ProductPage() {
       <section className="mt-10">
         <h2 className="font-display text-lg mb-4">Avaliações</h2>
 
-        {session?.user && (
+        {user && (
           <Glass className="rounded-2xl p-4 mb-5">
             <form onSubmit={submitReview} className="space-y-3">
               <div className="flex items-center gap-1">

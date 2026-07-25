@@ -25,6 +25,7 @@ export async function GET(req) {
           OR: [
             { title: { contains: q, mode: "insensitive" } },
             { tags: { has: q.toLowerCase() } },
+            { category: { name: { contains: q, mode: "insensitive" } } },
           ],
         }
       : {}),

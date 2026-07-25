@@ -4,18 +4,9 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "../hooks/useUser";
 import { TrendingUp, ChevronRight, Sparkles, Zap, Gamepad2 } from "lucide-react";
-import { Glass, GAME_ICONS, StarRow, money } from "../components/ui";
+import { Glass, StarRow, money } from "../components/ui";
 import ProductCard from "../components/ProductCard";
 import { useToast } from "../components/Toast";
-
-const GAMES = [
-  { slug: "freefire", name: "Free Fire" },
-  { slug: "roblox", name: "Roblox" },
-  { slug: "minecraft", name: "Minecraft" },
-  { slug: "fortnite", name: "Fortnite" },
-  { slug: "valorant", name: "Valorant" },
-  { slug: "outros", name: "Outros Jogos" },
-];
 
 function HomeInner() {
   const searchParams = useSearchParams();
@@ -31,6 +22,13 @@ function HomeInner() {
   const [sellers, setSellers] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [games, setGames] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/categories?featured=true")
+      .then((r) => r.json())
+      .then((data) => setGames(data.categories || []));
+  }, []);
 
   const loadFavorites = useCallback(async () => {
     if (!user) return;
@@ -129,19 +127,28 @@ function HomeInner() {
 
       {/* CATEGORIES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
-        <h2 className="font-display text-xl text-white mb-6">Categorias</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          <button onClick={() => goCategory("all")} className={`group rounded-2xl p-4 border transition text-left ${category === "all" ? "border-cyan-400/50 bg-cyan-400/5" : "border-white/10 bg-white/[0.03] hover:border-white/25"}`}>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-display text-xl text-white">Categorias em destaque</h2>
+          <a href="/categorias" className="text-sm text-cyan-300 hover:text-cyan-200 transition">Ver todas →</a>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <button onClick={() => goCategory("all")} className={`group rounded-2xl p-4 border transition text-left flex flex-col items-start justify-end h-32 ${category === "all" ? "border-cyan-400/50 bg-cyan-400/5" : "border-white/10 bg-white/[0.03] hover:border-white/25"}`}>
             <Gamepad2 className="w-6 h-6 text-white/70 mb-3 group-hover:text-cyan-300 transition" />
             <p className="text-sm font-semibold">Todos</p>
           </button>
-          {GAMES.map((g) => {
-            const Icon = GAME_ICONS[g.slug];
+          {games.map((g) => {
             const active = category === g.slug;
             return (
-              <button key={g.slug} onClick={() => goCategory(g.slug)} className={`group rounded-2xl p-4 border transition text-left relative overflow-hidden ${active ? "border-cyan-400/50" : "border-white/10 hover:border-white/25"} bg-white/[0.03]`}>
-                <Icon className={`w-6 h-6 mb-3 relative ${active ? "text-cyan-300" : "text-white/70 group-hover:text-white"} transition`} />
-                <p className="text-sm font-semibold relative">{g.name}</p>
+              <button
+                key={g.slug}
+                onClick={() => goCategory(g.slug)}
+                className={`group relative rounded-2xl overflow-hidden border transition text-left h-32 ${active ? "border-cyan-400/60" : "border-white/10 hover:border-white/30"}`}
+              >
+                {g.imageUrl && (
+                  <img src={g.imageUrl} alt={g.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/0" />
+                <p className="absolute bottom-3 left-3 text-sm font-semibold text-white">{g.name}</p>
               </button>
             );
           })}
@@ -164,7 +171,7 @@ function HomeInner() {
       <section id="catalogo" className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-xl text-white">
-            {category === "all" ? "Catálogo completo" : GAMES.find((g) => g.slug === category)?.name}
+            {category === "all" ? "Catálogo completo" : (games.find((g) => g.slug === category)?.name || products[0]?.category?.name || category)}
             {q && <span className="text-white/40 text-sm font-normal ml-2">— resultados para "{q}"</span>}
           </h2>
           <span className="text-sm text-white/40">{loading ? "carregando..." : `${products.length} produtos`}</span>

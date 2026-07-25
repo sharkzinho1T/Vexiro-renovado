@@ -6,19 +6,10 @@ import { useRouter } from "next/navigation";
 import { useUser } from "../hooks/useUser";
 import { createClient } from "../lib/supabase/client";
 import {
-  Search, ShoppingCart, Menu, X, ChevronRight, Zap, Bell, LogOut, User as UserIcon,
+  Search, ShoppingCart, Menu, X, ChevronRight, Zap, Bell, LogOut, User as UserIcon, Gamepad2,
 } from "lucide-react";
 import { Glass, GAME_ICONS } from "./ui";
 import { useCart } from "./CartContext";
-
-const GAMES = [
-  { slug: "freefire", name: "Free Fire" },
-  { slug: "roblox", name: "Roblox" },
-  { slug: "minecraft", name: "Minecraft" },
-  { slug: "fortnite", name: "Fortnite" },
-  { slug: "valorant", name: "Valorant" },
-  { slug: "outros", name: "Outros Jogos" },
-];
 
 export default function Navbar() {
   const { user } = useUser();
@@ -27,6 +18,14 @@ export default function Navbar() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [query, setQuery] = useState("");
   const [unread, setUnread] = useState(0);
+  const [games, setGames] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/categories?featured=true")
+      .then((r) => r.json())
+      .then((data) => setGames(data.categories || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -85,15 +84,20 @@ export default function Navbar() {
               Jogos <ChevronRight className="w-3.5 h-3.5 rotate-90" />
             </button>
             <div className="absolute top-full left-0 pt-3 hidden group-hover:block">
-              <Glass className="rounded-xl p-2 w-48 shadow-2xl shadow-black/50">
-                {GAMES.map((g) => {
-                  const Icon = GAME_ICONS[g.slug];
+              <Glass className="rounded-xl p-2 w-52 shadow-2xl shadow-black/50">
+                {games.map((g) => {
+                  const Icon = GAME_ICONS[g.slug] || Gamepad2;
                   return (
                     <Link key={g.slug} href={`/?category=${g.slug}`} className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 flex items-center gap-2 text-sm">
                       <Icon className="w-4 h-4 text-cyan-300" /> {g.name}
                     </Link>
                   );
                 })}
+                <div className="border-t border-white/10 mt-1 pt-1">
+                  <Link href="/categorias" className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/10 flex items-center gap-2 text-sm text-white/60">
+                    Ver todas as categorias
+                  </Link>
+                </div>
               </Glass>
             </div>
           </div>
@@ -181,14 +185,15 @@ export default function Navbar() {
           <Link href="/" onClick={() => setMobileMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-white/10 text-sm">Início</Link>
           <Link href="/sellers" onClick={() => setMobileMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-white/10 text-sm">Vendedores</Link>
           <Link href="/support" onClick={() => setMobileMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-white/10 text-sm">Suporte</Link>
-          {GAMES.map((g) => {
-            const Icon = GAME_ICONS[g.slug];
+          {games.map((g) => {
+            const Icon = GAME_ICONS[g.slug] || Gamepad2;
             return (
               <Link key={g.slug} href={`/?category=${g.slug}`} onClick={() => setMobileMenu(false)} className="px-3 py-2 rounded-lg hover:bg-white/10 text-sm flex items-center gap-2">
                 <Icon className="w-4 h-4 text-cyan-300" /> {g.name}
               </Link>
             );
           })}
+          <Link href="/categorias" onClick={() => setMobileMenu(false)} className="block px-3 py-2 rounded-lg hover:bg-white/10 text-sm text-white/60">Ver todas as categorias</Link>
         </div>
       )}
     </header>

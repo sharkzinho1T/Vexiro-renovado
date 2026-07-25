@@ -7,15 +7,6 @@ import { Package, Plus, Trash2, DollarSign, TrendingUp, BarChart3, X } from "luc
 import { Glass, money } from "../../components/ui";
 import { useToast } from "../../components/Toast";
 
-const CATEGORIES = [
-  { slug: "freefire", name: "Free Fire" },
-  { slug: "roblox", name: "Roblox" },
-  { slug: "minecraft", name: "Minecraft" },
-  { slug: "fortnite", name: "Fortnite" },
-  { slug: "valorant", name: "Valorant" },
-  { slug: "outros", name: "Outros Jogos" },
-];
-
 export default function SellerPage() {
   const { user, loading: userLoading } = useUser();
   const toast = useToast();
@@ -23,9 +14,21 @@ export default function SellerPage() {
   const [products, setProducts] = useState([]);
   const [earnings, setEarnings] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", price: "", stock: "", categorySlug: "freefire" });
+  const [categories, setCategories] = useState([]);
+  const [form, setForm] = useState({ title: "", description: "", price: "", stock: "", categorySlug: "" });
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({ amount: "", pixKey: "" });
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => {
+        setCategories(data.categories || []);
+        if (data.categories?.[0]) {
+          setForm((f) => (f.categorySlug ? f : { ...f, categorySlug: data.categories[0].slug }));
+        }
+      });
+  }, []);
 
   async function load() {
     const res = await fetch("/api/seller/products");
@@ -70,7 +73,7 @@ export default function SellerPage() {
     }
     toast("Produto publicado!", "success");
     setShowAdd(false);
-    setForm({ title: "", description: "", price: "", stock: "", categorySlug: "freefire" });
+    setForm({ title: "", description: "", price: "", stock: "", categorySlug: categories[0]?.slug || "" });
     load();
   }
 
@@ -211,7 +214,7 @@ export default function SellerPage() {
               <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Nome do produto" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-cyan-400/50" />
               <textarea required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição completa" rows={3} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-cyan-400/50" />
               <select value={form.categorySlug} onChange={(e) => setForm({ ...form, categorySlug: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-cyan-400/50">
-                {CATEGORIES.map((c) => <option key={c.slug} value={c.slug} className="bg-[#0a0a1a]">{c.name}</option>)}
+                {categories.map((c) => <option key={c.slug} value={c.slug} className="bg-[#0a0a1a]">{c.name}</option>)}
               </select>
               <div className="flex gap-3">
                 <input required type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Preço (R$)" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-cyan-400/50" />

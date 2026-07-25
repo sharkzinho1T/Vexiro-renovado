@@ -21,13 +21,33 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+// As 8 primeiras aparecem na home (featured: true), com banner de imagem.
+// As demais só aparecem via busca ou na página /categorias — mantém o
+// catálogo completo sem poluir a tela inicial.
 const CATEGORIES = [
-  { slug: "freefire", name: "Free Fire", icon: "flame" },
-  { slug: "roblox", name: "Roblox", icon: "box" },
-  { slug: "minecraft", name: "Minecraft", icon: "pickaxe" },
-  { slug: "fortnite", name: "Fortnite", icon: "swords" },
-  { slug: "valorant", name: "Valorant", icon: "crosshair" },
-  { slug: "outros", name: "Outros Jogos", icon: "sparkles" },
+  { slug: "freefire", name: "Free Fire", icon: "flame", featured: true, imageUrl: "https://i.postimg.cc/ZqXJnBzt/05e55d6dd73173f755ab5fde46e98b16.jpg" },
+  { slug: "minecraft", name: "Minecraft", icon: "pickaxe", featured: true, imageUrl: "https://i.postimg.cc/BnQSVfBr/33eef535b2ffa74da6a14c01834f2932.jpg" },
+  { slug: "league-of-legends", name: "League of Legends", icon: "swords", featured: true, imageUrl: "https://i.postimg.cc/tRW415g8/d1b11d5e4dbae547ac0d651476cec488.jpg" },
+  { slug: "fortnite", name: "Fortnite", icon: "swords", featured: true, imageUrl: "https://i.postimg.cc/KzgvD7DG/1342e6ef97e46edf4b2d4e715396de00.jpg" },
+  { slug: "cs2", name: "CS2", icon: "crosshair", featured: true, imageUrl: "https://i.postimg.cc/Z5VRb5qk/3c1e871625f3c31c9b7d10ed179205e9.jpg" },
+  { slug: "genshin-impact", name: "Genshin Impact", icon: "sparkles", featured: true, imageUrl: "https://i.postimg.cc/bvmzhC3d/aa382fc2160ece3fe40c8d8d0b9d2368.jpg" },
+  { slug: "roblox", name: "Roblox", icon: "box", featured: true, imageUrl: "https://i.postimg.cc/6pN6LG8W/d847c63326ad4ed39f95384118d0c8f9.jpg" },
+  { slug: "valorant", name: "Valorant", icon: "crosshair", featured: true, imageUrl: "https://i.postimg.cc/Yq0QKZRd/a400333f7c9137ad1ebb9ded69755c48.jpg" },
+
+  // Não aparecem na home — encontráveis pela busca / página de categorias.
+  { slug: "gta-v", name: "GTA V", icon: "car", featured: false },
+  { slug: "call-of-duty-mobile", name: "Call of Duty Mobile", icon: "crosshair", featured: false },
+  { slug: "pubg-mobile", name: "PUBG Mobile", icon: "crosshair", featured: false },
+  { slug: "clash-royale", name: "Clash Royale", icon: "swords", featured: false },
+  { slug: "clash-of-clans", name: "Clash of Clans", icon: "swords", featured: false },
+  { slug: "brawl-stars", name: "Brawl Stars", icon: "sparkles", featured: false },
+  { slug: "mobile-legends", name: "Mobile Legends", icon: "swords", featured: false },
+  { slug: "stumble-guys", name: "Stumble Guys", icon: "sparkles", featured: false },
+  { slug: "honkai-star-rail", name: "Honkai: Star Rail", icon: "sparkles", featured: false },
+  { slug: "growtopia", name: "Growtopia", icon: "box", featured: false },
+  { slug: "steam", name: "Contas e cartões Steam", icon: "gamepad", featured: false },
+  { slug: "discord-nitro", name: "Discord Nitro", icon: "sparkles", featured: false },
+  { slug: "outros", name: "Outros Jogos", icon: "sparkles", featured: false },
 ];
 
 // Cria (ou reaproveita, se já existir) um usuário no Supabase Auth e espera
@@ -65,7 +85,7 @@ async function waitForProfile(id, attempts = 10) {
 async function main() {
   console.log("Criando categorias...");
   for (const c of CATEGORIES) {
-    await prisma.category.upsert({ where: { slug: c.slug }, update: {}, create: c });
+    await prisma.category.upsert({ where: { slug: c.slug }, update: c, create: c });
   }
 
   console.log("Criando conta administradora...");

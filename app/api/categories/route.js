@@ -5,7 +5,12 @@ import { prisma } from "../../../lib/prisma";
 // a cada requisição e não deve ser executada em tempo de build.
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const featured = searchParams.get("featured");
+  const categories = await prisma.category.findMany({
+    where: featured === "true" ? { featured: true } : undefined,
+    orderBy: { name: "asc" },
+  });
   return NextResponse.json({ categories });
 }

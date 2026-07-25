@@ -8,6 +8,9 @@ export const GAME_ICONS = {
   minecraft: Pickaxe,
   fortnite: Swords,
   valorant: Crosshair,
+  "cs2": Crosshair,
+  "league-of-legends": Swords,
+  "genshin-impact": Sparkles,
   outros: Sparkles,
 };
 
@@ -17,6 +20,9 @@ export const GAME_GRADIENTS = {
   minecraft: "from-emerald-500 to-lime-600",
   fortnite: "from-violet-500 to-indigo-600",
   valorant: "from-red-500 to-pink-600",
+  "cs2": "from-yellow-500 to-orange-600",
+  "league-of-legends": "from-blue-500 to-cyan-600",
+  "genshin-impact": "from-amber-400 to-purple-600",
   outros: "from-cyan-400 to-blue-600",
 };
 

@@ -1,4 +1,0 @@
-# Não edite este arquivo manualmente.
-# Ele deve ser versionado no Git — é assim que o Prisma sabe qual banco
-# de dados este histórico de migrations foi escrito para.
-provider = "postgresql"
